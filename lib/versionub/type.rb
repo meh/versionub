@@ -64,7 +64,7 @@ class Type
     @name     = name
     @instance = Class.new(Instance)
 
-    @instance.instance_eval &block
+    @instance.class_eval &block
   end
 
   def parse (text)
@@ -76,7 +76,6 @@ class Type
 
     @instance.new(name, text, data)
   end
-
 end
 
 end

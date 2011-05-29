@@ -17,16 +17,7 @@
 # along with versionub. If not, see <http://www.gnu.org/licenses/>.
 #++
 
-module Versionub
-  Types = {}
+require 'versionub/type'
 
-  def self.parse (text, type=:standard)
-    Types[type.to_sym].parse(text.to_s)
-  end
-
-  def self.register (type, &block)
-    Types[type.to_sym] = Versionub::Type.new(type.to_sym, &block)
-  end
-end
-
-require 'versionub/types'
+require 'versionub/types/standard'
+require 'versionub/types/windows'

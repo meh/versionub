@@ -27,14 +27,16 @@ Versionub.register :windows do
       part.as(:major) >> separator.maybe >>
       str('SP').maybe >> part.as(:minor)
     }
+
+    root :version
   end
 
   def major
-    @data[:major] if @data[:major]
+    @data[:major].to_s if @data[:major]
   end
 
   def minor
-    @data[:minor] if @data[:minor]
+    @data[:minor].to_s if @data[:minor]
   end
 
   include Comparable
