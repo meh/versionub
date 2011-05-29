@@ -44,85 +44,83 @@ Versionub.register :standard do
     root :version
   end
 
-  callbacks do
-    def major
-      @data[:major].to_s if @data[:major]
+  def major
+    @data[:major].to_s if @data[:major]
+  end
+
+  def minor
+    @data[:minor].to_s if @data[:minor]
+  end
+
+  def bugfix
+    @data[:bugfix].to_s if @data[:bugfix]
+  end
+
+  def release_candidate
+    @data[:rc].is_a?(Array) ? '0' : @data[:rc].to_s
+  end; alias rc release_candidate
+
+  def development
+    @data[:development].is_a?(Array) ? '0' : @data[:development].to_s
+  end; alias d development; alias dev development;
+
+  def alpha
+    @data[:alpha].is_a?(Array) ? '0' : @data[:alpha].to_s
+  end; alias a alpha; alias alfa alpha
+
+  def beta
+    @data[:beta].is_a?(Array) ? '0' : @data[:beta].to_s
+  end; alias b beta
+
+  def release_candidate?
+    !!@data[:rc]
+  end
+
+  def development?
+    !!@data[:development]
+  end
+
+  def alpha?
+    !!@data[:alpha]
+  end
+
+  def beta?
+    !!@data[:beta]
+  end
+
+  include Comparable
+
+  def <=> (value)
+    value = Versionub.parse(value)
+
+    if release_candidate? && value.release_candidate? && (tmp = (rc <=> value.rc))
+      return tmp
     end
 
-    def minor
-      @data[:minor].to_s if @data[:minor]
+    if development? && value.development? && (tmp = (development <=> value.development))
+      return tmp
     end
 
-    def bugfix
-      @data[:bugfix].to_s if @data[:bugfix]
+    if alpha? && value.alpha? && (tmp = (alpha <=> value.alpha))
+      return tmp
     end
 
-    def release_candidate
-      @data[:rc].is_a?(Array) ? '0' : @data[:rc].to_s
-    end; alias rc release_candidate
-
-    def development
-      @data[:development].is_a?(Array) ? '0' : @data[:development].to_s
-    end; alias d development; alias dev development;
-
-    def alpha
-      @data[:alpha].is_a?(Array) ? '0' : @data[:alpha].to_s
-    end; alias a alpha; alias alfa alpha
-
-    def beta
-      @data[:beta].is_a?(Array) ? '0' : @data[:beta].to_s
-    end; alias b beta
-
-    def release_candidate?
-      !!@data[:rc]
+    if beta? && value.beta? && (tmp = (beta <=> value.beta))
+      return tmp
     end
 
-    def development?
-      !!@data[:development]
+    if (tmp = (bugfix <=> value.bugfix)) != 0
+      return tmp
     end
 
-    def alpha?
-      !!@data[:alpha]
+    if (tmp = (minor <=> value.minor)) != 0
+      return tmp
     end
 
-    def beta?
-      !!@data[:beta]
+    if (tmp = (major <=> value.major)) != 0
+      return tmp
     end
 
-    include Comparable
-
-    def <=> (value)
-      value = Versionub.parse(value)
-
-      if release_candidate? && value.release_candidate? && (tmp = (rc <=> value.rc))
-        return tmp
-      end
-
-      if development? && value.development? && (tmp = (development <=> value.development))
-        return tmp
-      end
-
-      if alpha? && value.alpha? && (tmp = (alpha <=> value.alpha))
-        return tmp
-      end
-
-      if beta? && value.beta? && (tmp = (beta <=> value.beta))
-        return tmp
-      end
-
-      if (tmp = (bugfix <=> value.bugfix)) != 0
-        return tmp
-      end
-
-      if (tmp = (minor <=> value.minor)) != 0
-        return tmp
-      end
-
-      if (tmp = (major <=> value.major)) != 0
-        return tmp
-      end
-
-      0
-    end
+    0
   end
 end

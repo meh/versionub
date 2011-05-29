@@ -23,6 +23,24 @@ module Versionub
 
 class Type
   class Instance
+    def self.parser (&block)
+      if block
+        @parser = Class.new(Parslet::Parser)
+        @parser.class_eval(&block)
+      end
+
+      @parser
+    end
+
+    def self.transformer (&block)
+      if block
+        @transformer = Class.new(Parslet::Transform)
+        @transformer.class_eval(&block)
+      end
+
+      @transformer
+    end
+
     attr_reader :type
 
     def initialize (type, text, data)
@@ -46,41 +64,19 @@ class Type
     @name     = name
     @instance = Class.new(Instance)
 
-    instance_eval &block
+    @instance.instance_eval &block
   end
 
   def parse (text)
-    data = parser.new.parse(text)
+    data = @instance.parser.new.parse(text)
 
-    if transformer
-      data = transformer.apply(data)
+    if @instance.transformer
+      data = @instance.transformer.apply(data)
     end
 
     @instance.new(name, text, data)
   end
 
-  def parser (&block)
-    if block
-      @parser = Class.new(Parslet::Parser)
-      @parser.class_eval(&block)
-    end
-
-    @parser
-  end
-
-  def transformer (&block)
-    if block
-      @transformer = Class.new(Parslet::Transform)
-      @transformer.class_eval(&block)
-    end
-
-    @transformer
-  end
-
-  def callbacks (&block)
-    @instance.class_eval &block
-    @instance.instance_methods
-  end
 end
 
 end
