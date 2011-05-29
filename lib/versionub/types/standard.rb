@@ -53,20 +53,24 @@ Versionub.register :standard do
   end
 
   def major
-    @data[:major].to_s if @data[:major]
+    @data[:major].to_s if @data[:major] && !@data[:major].is_a?(Array)
   end
 
   def minor
-    @data[:minor].to_s if @data[:minor]
+    @data[:minor].to_s if @data[:minor] && !@data[:minor].is_a?(Array)
   end
 
   def tiny
-    @data[:tiny].to_s if @data[:tiny]
+    @data[:tiny].to_s if @data[:tiny] && !@data[:tiny].is_a?(Array)
   end
 
   def bugfix
-    @data[:bugfix].to_s if @data[:bugfix]
-  end
+    @data[:bugfix].to_s if @data[:bugfix] && !@data[:bugfix].is_a?(Array)
+  end; alias tiny2 bugfix
+
+  def patch
+    @data[:patch].to_s if @data[:patch] && !@data[:patch].is_a?(Array)
+  end; alias p patch
 
   def release_candidate
     @data[:rc].is_a?(Array) ? '0' : @data[:rc].to_s
@@ -84,53 +88,83 @@ Versionub.register :standard do
     @data[:beta].is_a?(Array) ? '0' : @data[:beta].to_s
   end; alias b beta
 
-  def release_candidate?
-    !!@data[:rc]
-  end
-
-  def development?
-    !!@data[:development]
-  end
-
-  def alpha?
-    !!@data[:alpha]
-  end
-
-  def beta?
-    !!@data[:beta]
-  end
+  def major?;             !!major;       end
+  def minor?;             !!minor;       end
+  def tiny?;              !!tiny;        end
+  def bugfix?;            !!bugfix;      end
+  def patch?;             !!patch;       end
+  def release_candidate?; !!rc;          end
+  def development?;       !!development; end
+  def alpha?;             !!alpha;       end
+  def beta?;              !!beta;        end
 
   include Comparable
 
   def <=> (value)
     value = Versionub.parse(value)
 
-    if release_candidate? && value.release_candidate? && (tmp = (rc <=> value.rc))
-      return tmp
+    if bugfix?
+      if value.bugfix?
+        return bugfix.to_i <=> value.bugfix.to_i
+      else
+        return 1
+      end
+    elsif value.bugfix?
+      return -1
     end
 
-    if development? && value.development? && (tmp = (development <=> value.development))
-      return tmp
+    if tiny?
+      if value.tiny? && (tmp = tiny.to_i <=> value.tiny.to_i) != 0
+        return tmp
+      end
+    elsif value.tiny?
+      return -1
     end
 
-    if alpha? && value.alpha? && (tmp = (alpha <=> value.alpha))
-      return tmp
+    if minor?
+      if value.minor? && (tmp = minor.to_i <=> value.minor.to_i) != 0
+        return tmp
+      end
+    elsif value.minor?
+      return -1
     end
 
-    if beta? && value.beta? && (tmp = (beta <=> value.beta))
-      return tmp
+    if major?
+      if value.major? && (tmp = major.to_i <=> value.major.to_i) != 0
+        return tmp
+      end
     end
 
-    if (tmp = (bugfix <=> value.bugfix)) != 0
-      return tmp
+    if patch?
+      if value.patch?
+        return patch.to_i <=> value.patch.to_i
+      else
+        return 1
+      end
     end
 
-    if (tmp = (minor <=> value.minor)) != 0
-      return tmp
+    if release_candidate?
+      if value.release_candidate?
+        return release_candidate.to_i <=> value.release_candidate.to_i
+      else
+        return -1
+      end
     end
 
-    if (tmp = (major <=> value.major)) != 0
-      return tmp
+    if beta?
+      if value.beta?
+        return beta.to_i <=> value.beta.to_i
+      else
+        return -1
+      end
+    end
+
+    if alpha?
+      if value.alpha?
+        return alpha.to_i <=> value.alpha.to_i
+      else
+        return -1
+      end
     end
 
     0
