@@ -21,24 +21,32 @@ Versionub.register :standard do
   parser do
     rule(:part) { match['0-9'].repeat }
 
-    rule(:separator) { match['.-_\s'] }
+    rule(:separator) { match['.\-_\s'] }
 
     rule(:version) {
-      part.as(:major) >> separator.maybe >>
-      part.maybe.as(:minor) >> separator.maybe >>
-      part.maybe.as(:bugfix) >> separator.maybe >> (
-        ((str('d') | str('development') | str('dev')) >>
+      part.as(:major) >>
+      
+      (separator >> part.as(:minor)).maybe >>
+      (separator >> part.as(:tiny)).maybe >>
+
+      (separator.maybe >> (match['a-z'] >> match['0-9a-z'].absent? | part).as(:bugfix)).maybe >>
+
+      (separator.maybe >> (
+        ((str('patch') | str('p')) >>
+         (part.as(:patch) | any.as(:patch))) |
+
+        ((str('development') | str('dev') | str('d')) >>
          (part.as(:development) | any.as(:development))) |
 
-        ((str('a') | str('alpha') | str('alfa')) >>
+        ((str('alpha') | str('alfa') | str('a')) >>
          (part.as(:alpha) | any.as(:alpha))) |
 
-        ((str('b') | str('beta')) >>
+        ((str('beta') | str('b')) >>
          (part.as(:beta) | any.as(:beta))) |
 
         ((str('rc')) >>
          (part.as(:rc) | any.as(:rc)))
-      ).maybe
+      ).maybe)
     }
     
     root :version
@@ -50,6 +58,10 @@ Versionub.register :standard do
 
   def minor
     @data[:minor].to_s if @data[:minor]
+  end
+
+  def tiny
+    @data[:tiny].to_s if @data[:tiny]
   end
 
   def bugfix
