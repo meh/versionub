@@ -21,12 +21,24 @@ Versionub.register :standard do
   parser do
     rule(:part) { match['0-9'].repeat }
 
-    rule(:separator) { match['.-_'] }
+    rule(:separator) { match['.-_\s'] }
 
     rule(:version) {
       part.as(:major) >> separator.maybe >>
       part.maybe.as(:minor) >> separator.maybe >>
-      part.maybe.as(:bugfix)
+      part.maybe.as(:bugfix) >> separator.maybe >> (
+        ((str('d') | str('development') | str('dev')) >>
+         (part.as(:development) | any.as(:development))) |
+
+        ((str('a') | str('alpha') | str('alfa')) >>
+         (part.as(:alpha) | any.as(:alpha))) |
+
+        ((str('b') | str('beta')) >>
+         (part.as(:beta) | any.as(:beta))) |
+
+        ((str('rc')) >>
+         (part.as(:rc) | any.as(:rc)))
+      ).maybe
     }
     
     root :version
@@ -45,10 +57,72 @@ Versionub.register :standard do
       @data[:bugfix].to_s if @data[:bugfix]
     end
 
-    extend Comparable
+    def release_candidate
+      @data[:rc].is_a?(Array) ? '0' : @data[:rc].to_s
+    end; alias rc release_candidate
+
+    def development
+      @data[:development].is_a?(Array) ? '0' : @data[:development].to_s
+    end; alias d development; alias dev development;
+
+    def alpha
+      @data[:alpha].is_a?(Array) ? '0' : @data[:alpha].to_s
+    end; alias a alpha; alias alfa alpha
+
+    def beta
+      @data[:beta].is_a?(Array) ? '0' : @data[:beta].to_s
+    end; alias b beta
+
+    def release_candidate?
+      !!@data[:rc]
+    end
+
+    def development?
+      !!@data[:development]
+    end
+
+    def alpha?
+      !!@data[:alpha]
+    end
+
+    def beta?
+      !!@data[:beta]
+    end
+
+    include Comparable
 
     def <=> (value)
-      # TODO: itself
+      value = Versionub.parse(value)
+
+      if release_candidate? && value.release_candidate? && (tmp = (rc <=> value.rc))
+        return tmp
+      end
+
+      if development? && value.development? && (tmp = (development <=> value.development))
+        return tmp
+      end
+
+      if alpha? && value.alpha? && (tmp = (alpha <=> value.alpha))
+        return tmp
+      end
+
+      if beta? && value.beta? && (tmp = (beta <=> value.beta))
+        return tmp
+      end
+
+      if (tmp = (bugfix <=> value.bugfix)) != 0
+        return tmp
+      end
+
+      if (tmp = (minor <=> value.minor)) != 0
+        return tmp
+      end
+
+      if (tmp = (major <=> value.major)) != 0
+        return tmp
+      end
+
+      0
     end
   end
 end

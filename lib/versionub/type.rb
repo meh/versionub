@@ -22,19 +22,29 @@ require 'parslet'
 module Versionub
 
 class Type
+  class Instance
+    attr_reader :type
+
+    def initialize (type, text, data)
+      @type = type
+      @text = text
+      @data = data
+    end
+
+    def to_hash
+      @data.clone
+    end
+
+    def to_s
+      @text
+    end
+  end
+
   attr_reader :name
 
   def initialize (name, &block)
-    @name = name
-
-    @klass = Class.new {
-      attr_reader :type, :data
-
-      def initialize (type, data)
-        @type = type
-        @data = data
-      end
-    }
+    @name     = name
+    @instance = Class.new(Instance)
 
     instance_eval &block
   end
@@ -46,7 +56,7 @@ class Type
       data = transformer.apply(data)
     end
 
-    @klass.new(name, data)
+    @instance.new(name, text, data)
   end
 
   def parser (&block)
@@ -68,9 +78,8 @@ class Type
   end
 
   def callbacks (&block)
-    @klass.class_eval &block
-
-    @klass.instance_methods
+    @instance.class_eval &block
+    @instance.instance_methods
   end
 end
 
