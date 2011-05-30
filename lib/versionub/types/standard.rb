@@ -135,11 +135,7 @@ Versionub.register :standard do
   def <=> (value)
     value = Versionub.parse(value, type)
 
-    if (tmp = bugfix <=> value.bugfix) != 0
-      return tmp
-    end
-
-    if (tmp = tiny <=> value.tiny) != 0
+    if (tmp = major <=> value.major) != 0
       return tmp
     end
 
@@ -147,7 +143,11 @@ Versionub.register :standard do
       return tmp
     end
 
-    if (tmp = major <=> value.major) != 0
+    if (tmp = tiny <=> value.tiny) != 0
+      return tmp
+    end
+
+    if (tmp = bugfix <=> value.bugfix) != 0
       return tmp
     end
 
@@ -164,6 +164,8 @@ Versionub.register :standard do
     if release_candidate?
       if value.release_candidate?
         return release_candidate <=> value.release_candidate
+      elsif value.beta? || value.alpha?
+        return 1
       else
         return -1
       end
@@ -174,6 +176,8 @@ Versionub.register :standard do
     if beta?
       if value.beta?
         return beta <=> value.beta
+      elsif value.alpha?
+        return 1
       else
         return -1
       end
