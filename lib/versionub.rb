@@ -38,13 +38,13 @@ end
 require 'versionub/types'
 
 class String
-  def to_version
-    Versionub.parse(self)
+  def to_version (type=:standard)
+    Versionub.parse(self, type)
   end
 end
 
 class Hash
-  def to_version
-    Versionub.create(self)
+  def to_version (type=:standard)
+    Versionub.create(self, type)
   end
 end
