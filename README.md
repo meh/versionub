@@ -1,8 +1,12 @@
 Versionub, the version parser for nubs
 ======================================
 
-Versionub is a simple library to manage versions, somewhat like Versionomy but a lot easier to implement
-another version type :)
+Versionub is a simple library to manage versions, somewhat like [Versionomy](https://github.com/dazuma/versionomy)
+but a lot easier to implement another version type and far more shorter in code (which usually is better with equal
+functionality).
+
+The only feature that's missing right now is #bump, I don't really need it but it wouldn't be hard to implement,
+if someone wants to implement it I'll gladly merge the changes, the file to change is `lib/versionub/types/standard.rb`.
 
 It uses Parslet for parsing capabilities.
 
