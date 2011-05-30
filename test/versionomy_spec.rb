@@ -39,7 +39,9 @@ describe Versionub do
       a.patchlevel.should == b.patchlevel
     end
   end
+end
 
+describe Versionub::Type::Instance do
   it 'returns true for 2.0.0.0 == 2' do
     Versionub.parse('2').should == '2.0.0.0'      
   end
