@@ -98,4 +98,13 @@ v12.major                                  # => 2008
 v12.minor                                  # => 2
 v12.to_s                                   # => '2008 SP2'
 v12 == Versionub.parse('2008.2', :windows) # => true
+
+# You can also use String#to_version and Hash#to_version to parse or create a version
+v13 = '1.3'.to_version
+v13.major                 # => 1
+v13.minor                 # => 3
+
+v14 = { major: 1, minor: 3 }.to_version
+v13.major                 # => 1
+v13.minor                 # => 3
 ```

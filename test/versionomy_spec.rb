@@ -42,15 +42,15 @@ describe Versionub do
 end
 
 describe Versionub::Type::Instance do
-  it 'returns true for 2.0.0.0 == 2' do
-    Versionub.parse('2').should == '2.0.0.0'      
+  it 'returns true for 1.4a3 > 1.3.2 ' do
+    '1.4a3'.to_version.should > '1.3.2'
   end
 
-  it 'returns true for 2.0 > 2.0b3' do
-    Versionub.parse('2.0').should > '2.0b3'
+  it 'returns true for 1.4.0b2 > 1.4a3' do
+    '1.4.0b2'.to_version.should > '1.4a3'
   end
 
-  it 'returns true for 2.0p2 > 2.0' do
-    Versionub.parse('2.0p2').should > '2.0'
+  it 'returns true for 2.0.0-1 == 2.0p1' do
+    '2.0.0-1'.to_version.should == '2.0p1'
   end
 end
