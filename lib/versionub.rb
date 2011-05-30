@@ -21,7 +21,13 @@ module Versionub
   Types = {}
 
   def self.parse (text, type=:standard)
+    return text if text.is_a?(Versionub::Type::Instance)
+
     Types[type.to_sym].parse(text.to_s)
+  end
+
+  def self.create (data, type=:standard)
+     Types[type.to_sym].create(data)
   end
 
   def self.register (type, &block)

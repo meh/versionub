@@ -18,23 +18,21 @@
 #++
 
 Versionub.register :standard do
-  parser do
+  parse do
     rule(:part) { match['0-9'].repeat }
 
+    rule(:dot) { str('.') }
     rule(:separator) { match['.\-_\s'] }
 
     rule(:version) {
       part.as(:major) >>
       
-      (separator >> part.as(:minor)).maybe >>
-      (separator >> part.as(:tiny)).maybe >>
+      (dot >> part.as(:minor)).maybe >>
+      (dot >> part.as(:tiny)).maybe >>
 
-      (separator.maybe >> (match['a-z'] >> match['0-9a-z'].absent? | part).as(:bugfix)).maybe >>
+      (dot.maybe >> (match['a-z'] >> match['0-9a-z'].absent? | part).as(:bugfix)).maybe >>
 
       (separator.maybe >> (
-        ((str('patch') | str('p')) >>
-         (part.as(:patch) | any.as(:patch))) |
-
         ((str('development') | str('dev') | str('d')) >>
          (part.as(:development) | any.as(:development))) |
 
@@ -45,128 +43,160 @@ Versionub.register :standard do
          (part.as(:beta) | any.as(:beta))) |
 
         ((str('rc')) >>
-         (part.as(:rc) | any.as(:rc)))
+         (part.as(:rc) | any.as(:rc))) |
+
+        ((str('patch') | str('p')).maybe >>
+         (part.as(:patch) | any.as(:patch)))
       ).maybe)
     }
-    
-    root :version
+
+    rule(:whole) {
+      version.as(:version)
+    }
+
+    root :whole
+  end
+
+  transform do
+    rule(version: subtree(:version)) {
+      version.dup.each {|name, value|
+        version[name] = case value
+          when Array          then nil
+          when Parslet::Slice then value.to_s
+          else                     value
+        end
+
+        if !version[name]
+          version.delete(name)
+        end
+      }
+
+      version
+    }
   end
 
   def major
-    @data[:major].to_s if @data[:major] && !@data[:major].is_a?(Array)
+    @data[:major].to_i
   end
 
   def minor
-    @data[:minor].to_s if @data[:minor] && !@data[:minor].is_a?(Array)
+    @data[:minor].to_i
   end
 
   def tiny
-    @data[:tiny].to_s if @data[:tiny] && !@data[:tiny].is_a?(Array)
+    @data[:tiny].to_i
   end
 
   def bugfix
-    @data[:bugfix].to_s if @data[:bugfix] && !@data[:bugfix].is_a?(Array)
+    if @data[:bugfix] && @data[:bugfix].match(/[^0-9]/)
+      @data[:bugfix]
+    else
+      @data[:bugfix].to_i
+    end
   end; alias tiny2 bugfix
 
   def patch
-    @data[:patch].to_s if @data[:patch] && !@data[:patch].is_a?(Array)
-  end; alias p patch
+    @data[:patch].to_i
+  end; alias p patch; alias patchlevel patch
 
   def release_candidate
-    @data[:rc].is_a?(Array) ? '0' : @data[:rc].to_s
+    @data[:release_candidate].to_i if @data[:release_candidate]
   end; alias rc release_candidate
 
   def development
-    @data[:development].is_a?(Array) ? '0' : @data[:development].to_s
+    @data[:development].to_i if @data[:development]
   end; alias d development; alias dev development;
 
   def alpha
-    @data[:alpha].is_a?(Array) ? '0' : @data[:alpha].to_s
-  end; alias a alpha; alias alfa alpha
+    @data[:alpha].to_i if @data[:alpha]
+  end; alias a alpha; alias alfa alpha; alias alpha_version alpha
 
   def beta
-    @data[:beta].is_a?(Array) ? '0' : @data[:beta].to_s
-  end; alias b beta
+    @data[:beta].to_i if @data[:beta]
+  end; alias b beta; alias beta_version beta
 
-  def major?;             !!major;       end
-  def minor?;             !!minor;       end
-  def tiny?;              !!tiny;        end
-  def bugfix?;            !!bugfix;      end
-  def patch?;             !!patch;       end
-  def release_candidate?; !!rc;          end
-  def development?;       !!development; end
-  def alpha?;             !!alpha;       end
-  def beta?;              !!beta;        end
+  def patch?;             !!@data[:patch];       end
+  def release_candidate?; !!@data[:rc];          end
+  def development?;       !!@data[:development]; end
+  def alpha?;             !!@data[:alpha];       end
+  def beta?;              !!@data[:beta];        end
+
+  def release_type
+    return :alpha             if alpha?
+    return :beta              if beta?
+    return :patch             if patch?
+    return :development       if development?
+    return :release_candidate if release_candidate?
+    return :final
+  end
 
   include Comparable
 
   def <=> (value)
-    value = Versionub.parse(value)
+    value = Versionub.parse(value, type)
 
-    if bugfix?
-      if value.bugfix? && (tmp = bugfix.to_i <=> value.bugfix.to_i) != 0
-        return tmp
-      else
-        return 1
-      end
-    elsif value.bugfix?
-      return -1
+    if (tmp = bugfix <=> value.bugfix) != 0
+      return tmp
     end
 
-    if tiny?
-      if value.tiny? && (tmp = tiny.to_i <=> value.tiny.to_i) != 0
-        return tmp
-      end
-    elsif value.tiny?
-      return -1
+    if (tmp = tiny <=> value.tiny) != 0
+      return tmp
     end
 
-    if minor?
-      if value.minor? && (tmp = minor.to_i <=> value.minor.to_i) != 0
-        return tmp
-      end
-    elsif value.minor?
-      return -1
+    if (tmp = minor <=> value.minor) != 0
+      return tmp
     end
 
-    if major?
-      if value.major? && (tmp = major.to_i <=> value.major.to_i) != 0
-        return tmp
-      end
+    if (tmp = major <=> value.major) != 0
+      return tmp
     end
 
     if patch?
       if value.patch?
-        return patch.to_i <=> value.patch.to_i
+        return patch <=> value.patch
       else
         return 1
       end
+    elsif value.patch?
+      return -1
     end
 
     if release_candidate?
       if value.release_candidate?
-        return release_candidate.to_i <=> value.release_candidate.to_i
+        return release_candidate <=> value.release_candidate
       else
         return -1
       end
+    elsif value.release_candidate?
+      return 1
     end
 
     if beta?
       if value.beta?
-        return beta.to_i <=> value.beta.to_i
+        return beta <=> value.beta
       else
         return -1
       end
+    elsif value.beta?
+      return 1
     end
 
     if alpha?
       if value.alpha?
-        return alpha.to_i <=> value.alpha.to_i
+        return alpha <=> value.alpha
       else
         return -1
       end
+    elsif value.alpha?
+      return 1
     end
 
     0
+  end
+
+  def to_s
+    return super if @text
+
+    "#{major}.#{minor}.#{tiny}"
   end
 end

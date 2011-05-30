@@ -18,7 +18,7 @@
 #++
 
 Versionub.register :windows do
-  parser do
+  parse do
     rule(:part) { match['0-9'].repeat }
 
     rule(:separator) { match['.-_\s'] }
