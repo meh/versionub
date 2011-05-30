@@ -104,8 +104,8 @@ Versionub.register :standard do
     value = Versionub.parse(value)
 
     if bugfix?
-      if value.bugfix?
-        return bugfix.to_i <=> value.bugfix.to_i
+      if value.bugfix? && (tmp = bugfix.to_i <=> value.bugfix.to_i) != 0
+        return tmp
       else
         return 1
       end
