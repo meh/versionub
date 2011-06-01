@@ -61,7 +61,7 @@ Versionub.register :standard do
   end
 
   transform do
-    rule(version: subtree(:version)) {
+    rule(:version => subtree(:version)) {
       version.delete(:bugfix) if version[:bugfix].is_a?(Array)
 
       version.dup.each {|name, value|
@@ -125,8 +125,6 @@ Versionub.register :standard do
     return :patch             if patch?
     return :final
   end
-
-  include Comparable
 
   def <=> (value)
     value = Versionub.parse(value, type)

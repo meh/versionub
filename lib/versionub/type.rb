@@ -26,14 +26,28 @@ class Type
     attr_reader :type
 
     def initialize (type, text, data)
-      super(text)
+      super(text || '')
 
       @type = type
       @data = data
     end
 
+    Comparable.instance_methods.each {|meth|
+      define_method meth do |*args|
+        Comparable.instance_method(meth).bind(self).call(*args)
+      end
+    }
+
+    def <=> (value)
+      self.to_s <=> value
+    end
+
     def to_hash
       @data.dup
+    end
+
+    def inspect
+      to_s
     end
 
     class << self

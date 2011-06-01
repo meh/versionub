@@ -25,9 +25,9 @@ describe Versionub do
   end
 
   describe '.create' do
-    it 'returns the same as Versionomy for { major: 1, minor: 3, tiny: 2 }' do
-      a = Versionub.create(major: 1, minor: 3, tiny: 2)
-      b = Versionomy.create(major: 1, minor: 3, tiny: 2)
+    it 'returns the same as Versionomy for { :major => 1, :minor => 3, :tiny => 2 }' do
+      a = Versionub.create(:major => 1, :minor => 3, :tiny => 2)
+      b = Versionomy.create(:major => 1, :minor => 3, :tiny => 2)
 
       a.major.should == b.major
       a.minor.should == b.minor
