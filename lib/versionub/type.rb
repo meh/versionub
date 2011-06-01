@@ -22,21 +22,18 @@ require 'parslet'
 module Versionub
 
 class Type
-  class Instance
+  class Instance < String
     attr_reader :type
 
     def initialize (type, text, data)
+      super(text)
+
       @type = type
-      @text = text
       @data = data
     end
 
     def to_hash
-      @data.clone
-    end
-
-    def to_s
-      @text
+      @data.dup
     end
 
     class << self

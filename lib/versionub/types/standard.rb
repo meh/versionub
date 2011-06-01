@@ -167,7 +167,7 @@ Versionub.register :standard do
   end
 
   def to_s
-    return super if @text
+    return super unless empty?
 
     "#{major}.#{minor}.#{tiny}"
   end
