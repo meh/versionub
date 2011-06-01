@@ -22,33 +22,37 @@ require 'parslet'
 module Versionub
 
 class Type
-  class Instance < String
+  class Instance
+    include Comparable
+
     attr_reader :type
 
     def initialize (type, text, data)
-      super(text || '')
+      @text = text
 
       @type = type
       @data = data
     end
 
-    Comparable.instance_methods.each {|meth|
+    String.instance_methods.each {|meth|
+      next if respond_to? meth
+
       define_method meth do |*args|
-        Comparable.instance_method(meth).bind(self).call(*args)
+        String.instance_method(meth).bind(@text).call(*args)
       end
     }
 
     def <=> (value)
-      self.to_s <=> value
+      to_s <=> value
     end
 
     def to_hash
       @data.dup
     end
 
-    def inspect
-      to_s
-    end
+    def to_s
+      @text
+    end; alias to_str to_s
 
     class << self
       attr_accessor :parser, :transformer
