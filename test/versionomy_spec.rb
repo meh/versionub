@@ -53,4 +53,8 @@ describe Versionub::Type::Instance do
   it 'returns true for 2.0.0-1 == 2.0p1' do
     '2.0.0-1'.to_version.should == '2.0p1'
   end
+
+  it 'returns true for 2.0.0pre < 2.0.0rc1' do
+    '2.0.0pre'.to_version.should < '2.0.0rc1'
+  end
 end

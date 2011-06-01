@@ -42,6 +42,9 @@ Versionub.register :standard do
         ((str('beta') | str('b')) >>
          (part.as(:beta) | any.as(:beta))) |
 
+        ((str('pre')) >>
+          (part.as(:pre) | any.as(:pre))) |
+
         ((str('rc')) >>
          (part.as(:rc) | any.as(:rc))) |
 
@@ -59,33 +62,34 @@ Versionub.register :standard do
 
   transform do
     rule(version: subtree(:version)) {
+      version.delete(:bugfix) if version[:bugfix].is_a?(Array)
+
       version.dup.each {|name, value|
         version[name] = case value
-          when Array          then nil
+          when Array          then 0
           when Parslet::Slice then value.to_s
           else                     value
         end
 
-        if !version[name]
-          version.delete(name)
-        end
+        version.delete(name) unless version[name]
       }
 
       version
     }
   end
 
-  def major
-    @data[:major].to_i
-  end
+  [:major, :minor, :tiny, [:patch, :p, :patchlevel]].each {|part|
+    part = [part].flatten
+    name = part.shift
 
-  def minor
-    @data[:minor].to_i
-  end
+    define_method name do
+      @data[name].to_i
+    end
 
-  def tiny
-    @data[:tiny].to_i
-  end
+    part.each {|synonym|
+      alias_method synonym, name
+    }
+  }
 
   def bugfix
     if @data[:bugfix] && @data[:bugfix].match(/[^0-9]/)
@@ -95,38 +99,30 @@ Versionub.register :standard do
     end
   end; alias tiny2 bugfix
 
-  def patch
-    @data[:patch].to_i
-  end; alias p patch; alias patchlevel patch
+  [:patch, [:release_candidate, :rc], :pre, [:beta, :b, :beta_version], [:alpha, :a, :alpha_version], [:development, :d, :dev]].each {|part|
+    part = [part].flatten
+    name = part.shift
 
-  def release_candidate
-    @data[:release_candidate].to_i if @data[:release_candidate]
-  end; alias rc release_candidate
+    define_method "#{name}?" do
+      !!@data[name]
+    end
 
-  def development
-    @data[:development].to_i if @data[:development]
-  end; alias d development; alias dev development;
+    define_method name do
+      @data[name].to_i if send "#{name}?"
+    end unless respond_to?(name)
 
-  def alpha
-    @data[:alpha].to_i if @data[:alpha]
-  end; alias a alpha; alias alfa alpha; alias alpha_version alpha
-
-  def beta
-    @data[:beta].to_i if @data[:beta]
-  end; alias b beta; alias beta_version beta
-
-  def patch?;             !!@data[:patch];       end
-  def release_candidate?; !!@data[:rc];          end
-  def development?;       !!@data[:development]; end
-  def alpha?;             !!@data[:alpha];       end
-  def beta?;              !!@data[:beta];        end
+    part.each {|synonym|
+      alias_method synonym, name
+    }
+  }
 
   def release_type
     return :alpha             if alpha?
     return :beta              if beta?
-    return :patch             if patch?
     return :development       if development?
+    return :pre               if pre?
     return :release_candidate if release_candidate?
+    return :patch             if patch?
     return :final
   end
 
@@ -135,21 +131,11 @@ Versionub.register :standard do
   def <=> (value)
     value = Versionub.parse(value, type)
 
-    if (tmp = major <=> value.major) != 0
-      return tmp
-    end
-
-    if (tmp = minor <=> value.minor) != 0
-      return tmp
-    end
-
-    if (tmp = tiny <=> value.tiny) != 0
-      return tmp
-    end
-
-    if (tmp = bugfix <=> value.bugfix) != 0
-      return tmp
-    end
+    [:major, :minor, :tiny, :bugfix].each {|name|
+      if (tmp = send(name) <=> value.send(name)) != 0
+        return tmp
+      end
+    }
 
     if patch?
       if value.patch?
@@ -161,39 +147,21 @@ Versionub.register :standard do
       return -1
     end
 
-    if release_candidate?
-      if value.release_candidate?
-        return release_candidate <=> value.release_candidate
-      elsif value.beta? || value.alpha?
-        return 1
-      else
+    parts = [:release_candidate, :pre, :beta, :alpha, :development]
+    
+    parts.each_with_index {|name, index|
+      if send("#{name}?")
+        if value.send("#{name}?")
+          return send(name) <=> value.send(name)
+        elsif parts[(index + 1) .. -1].any? { |n| value.send("#{n}?") }
+          return 1
+        else
+          return -1
+        end
+      elsif value.send("#{name}?")
         return -1
       end
-    elsif value.release_candidate?
-      return 1
-    end
-
-    if beta?
-      if value.beta?
-        return beta <=> value.beta
-      elsif value.alpha?
-        return 1
-      else
-        return -1
-      end
-    elsif value.beta?
-      return 1
-    end
-
-    if alpha?
-      if value.alpha?
-        return alpha <=> value.alpha
-      else
-        return -1
-      end
-    elsif value.alpha?
-      return 1
-    end
+    }
 
     0
   end
