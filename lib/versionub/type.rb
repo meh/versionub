@@ -34,13 +34,13 @@ class Type
       @data = data
     end
 
-    String.instance_methods.each {|meth|
-      next if respond_to? meth
-
-      define_method meth do |*args|
-        String.instance_method(meth).bind(@text).call(*args)
+    def method_missing (id, *args, &block)
+      if @text.respond_to?(id)
+        @text.send id, *args, &block
+      else
+        super
       end
-    }
+    end
 
     def <=> (value)
       to_s <=> value

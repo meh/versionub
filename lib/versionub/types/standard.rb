@@ -46,7 +46,10 @@ Versionub.register :standard do
           (part.as(:pre) | any.as(:pre))) |
 
         ((str('rc')) >>
-         (part.as(:rc) | any.as(:rc))) |
+         (part.as(:release_candidate) | any.as(:release_candidate))) |
+
+        ((str('revision') | str('rev') | str('r')) >>
+         (part.as(:revision) | any.as(:revision))) |
 
         ((str('patch') | str('p')).maybe >>
          (part.as(:patch) | any.as(:patch)))
@@ -78,7 +81,7 @@ Versionub.register :standard do
     }
   end
 
-  [:major, :minor, :tiny, [:patch, :p, :patchlevel]].each {|part|
+  [:major, :minor, [:tiny, :teeny], [:patch, :patchlevel, :p], [:revision, :rev, :r]].each {|part|
     part = [part].flatten
     name = part.shift
 
@@ -99,7 +102,7 @@ Versionub.register :standard do
     end
   end; alias tiny2 bugfix
 
-  [:patch, [:release_candidate, :rc], :pre, [:beta, :b, :beta_version], [:alpha, :a, :alpha_version], [:development, :d, :dev]].each {|part|
+  [:patch, :revision, [:release_candidate, :rc], :pre, [:beta, :b, :beta_version], [:alpha, :a, :alpha_version], [:development, :d, :dev]].each {|part|
     part = [part].flatten
     name = part.shift
 
@@ -122,6 +125,7 @@ Versionub.register :standard do
     return :development       if development?
     return :pre               if pre?
     return :release_candidate if release_candidate?
+    return :revision          if revision?
     return :patch             if patch?
     return :final
   end
@@ -135,19 +139,19 @@ Versionub.register :standard do
       end
     }
 
-    if patch?
-      if value.patch?
-        return patch <=> value.patch
-      else
-        return 1
+    [:patch, :revision].each {|name|
+      if send("#{name}?")
+        if value.send("#{name}?")
+          return send(name) <=> value.send(name)
+        else
+          return 1
+        end
+      elsif value.send("#{name}?")
+        return -1
       end
-    elsif value.patch?
-      return -1
-    end
+    }
 
-    parts = [:release_candidate, :pre, :beta, :alpha, :development]
-    
-    parts.each_with_index {|name, index|
+    (parts = [:release_candidate, :pre, :beta, :alpha, :development]).each_with_index {|name, index|
       if send("#{name}?")
         if value.send("#{name}?")
           return send(name) <=> value.send(name)

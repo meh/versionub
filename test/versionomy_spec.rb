@@ -1,44 +1,57 @@
 #! /usr/bin/env ruby
 require 'rubygems'
 require 'versionub'
-require 'versionomy'
 
-describe Versionub do
-  describe '.parse' do
-    it 'returns the same as Versionomy for 1.2.3a2' do
-      a = Versionub.parse('1.2.3a2')
-      b = Versionomy.parse('1.2.3a2')
+begin
+  require 'versionomy'
 
-      a.major.should == b.major
-      a.minor.should == b.minor
-      a.tiny.should  == b.tiny
-      a.tiny2.should == b.tiny2
+  describe Versionub do
+    describe '.parse' do
+      it 'returns the same as Versionomy for 1.2.3a2' do
+        a = Versionub.parse('1.2.3a2')
+        b = Versionomy.parse('1.2.3a2')
 
-      a.release_type.should == b.release_type
+        a.major.should == b.major
+        a.minor.should == b.minor
+        a.tiny.should  == b.tiny
+        a.tiny2.should == b.tiny2
 
-      a.alpha.should == b.alpha_version
+        a.release_type.should == b.release_type
+
+        a.alpha.should == b.alpha_version
+      end
+
+      it 'returns 2008.2 for Versionub.parse("2008 SP2", :windows)' do
+        Versionub.parse('2008 SP2', :windows) == '2008.2'
+      end
+
+      it 'parses 1.8.3-r4 correctly' do
+        a = Versionub.parse('1.8.3-r4')
+
+        a.major.should    == 1
+        a.minor.should    == 8
+        a.teeny.should    == 3
+        a.revision.should == 4
+      end
     end
 
-    it 'returns 2008.2 for Versionub.parse("2008 SP2", :windows)' do
-      Versionub.parse('2008 SP2', :windows) == '2008.2'
+    describe '.create' do
+      it 'returns the same as Versionomy for { :major => 1, :minor => 3, :tiny => 2 }' do
+        a = Versionub.create(:major => 1, :minor => 3, :tiny => 2)
+        b = Versionomy.create(:major => 1, :minor => 3, :tiny => 2)
+
+        a.major.should == b.major
+        a.minor.should == b.minor
+        a.tiny.should  == b.tiny
+        a.tiny2.should == b.tiny2
+
+        a.release_type.should == b.release_type
+
+        a.patchlevel.should == b.patchlevel
+      end
     end
   end
-
-  describe '.create' do
-    it 'returns the same as Versionomy for { :major => 1, :minor => 3, :tiny => 2 }' do
-      a = Versionub.create(:major => 1, :minor => 3, :tiny => 2)
-      b = Versionomy.create(:major => 1, :minor => 3, :tiny => 2)
-
-      a.major.should == b.major
-      a.minor.should == b.minor
-      a.tiny.should  == b.tiny
-      a.tiny2.should == b.tiny2
-
-      a.release_type.should == b.release_type
-
-      a.patchlevel.should == b.patchlevel
-    end
-  end
+rescue LoadError
 end
 
 describe Versionub::Type::Instance do
